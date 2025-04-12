@@ -2,19 +2,28 @@ package main
 
 import (
 	"cc-luhn-validator/src"
+	"errors"
 	"fmt"
+	"net/http"
+	"os"
 )
 
 func main() {
-	// Numbers taken from stripe testing doc: https://docs.stripe.com/testing
+	// Dummy credit card numbers can be found in stripe testing doc: https://docs.stripe.com/testing
 
-	// Invalid credit card
-	invalidCardNumbers := []int{4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 1}
-	isValid := src.IsValid(invalidCardNumbers)
-	fmt.Printf("Card is valid: %v\n", isValid)
+	fmt.Println("Starting server...")
 
-	// Valid credit card
-	validCardNumbers := []int{4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2, 4, 2}
-	isValid = src.IsValid(validCardNumbers)
-	fmt.Printf("Card is valid: %v\n", isValid)
+	fmt.Println("Registering server paths to server mux...")
+	http.HandleFunc("/validate", src.GetValidation)
+
+	// Specify IP address before colon to tell server to listen on specific IP addresses.
+	fmt.Println("Listening and ready to serve...")
+	err := http.ListenAndServe(":8080", nil)
+
+	if errors.Is(err, http.ErrServerClosed) {
+		fmt.Println("Server shutting down...")
+	} else if err != nil {
+		fmt.Printf("Error starting server: %s\n", err)
+		os.Exit(1)
+	}
 }
