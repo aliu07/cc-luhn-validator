@@ -1,4 +1,4 @@
-package src
+package models
 
 type CardValidationResponse struct {
 	IsValid bool   `json:"isValid"`
