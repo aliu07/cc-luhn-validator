@@ -1,6 +1,7 @@
 package models
 
 type CardValidationResponse struct {
-	IsValid bool   `json:"isValid"`
-	Message string `json:"message"`
+	IsValid     bool   `json:"isValid"`
+	CardNetwork string `json:"cardNetwork"`
+	Message     string `json:"message"`
 }

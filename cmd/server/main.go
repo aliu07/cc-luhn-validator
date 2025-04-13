@@ -1,8 +1,8 @@
 package main
 
 import (
-	"cc-luhn-validator/internal"
-	"cc-luhn-validator/internal/validation"
+	"cc-luhn-validator/internal/handlers"
+	"cc-luhn-validator/internal/utils"
 	"errors"
 	"fmt"
 	"net/http"
@@ -15,8 +15,8 @@ func main() {
 	fmt.Println("Starting server...")
 
 	fmt.Println("Registering server paths to server mux...")
-	cardValidator := validation.NewCardValidator()
-	handler := internal.NewHandler(cardValidator)
+	cardValidator := utils.NewCardValidator()
+	handler := handlers.NewHandler(cardValidator)
 	http.HandleFunc("/validate", handler.GetValidation)
 
 	// Specify IP address before colon to tell server to listen on specific IP addresses.
