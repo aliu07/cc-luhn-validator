@@ -27,7 +27,7 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 		var req models.CardValidationRequest
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			fmt.Printf("Bad request: invalid JSON format, returning %d...\n", http.StatusBadRequest)
+			fmt.Println("Bad request: invalid JSON format")
 
 			response := models.CardValidationResponse{
 				IsValid: false,
@@ -40,7 +40,7 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if req.CardNumber == "" {
-			fmt.Printf("Bad request: missing card number, returning %d...\n", http.StatusBadRequest)
+			fmt.Println("Bad request: missing card number")
 
 			response := models.CardValidationResponse{
 				IsValid: false,
@@ -55,7 +55,7 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 		isValid, err := h.validator.ValidateString(req.CardNumber)
 
 		if err != nil {
-			fmt.Printf("%s, returning %d...", err.Error(), http.StatusBadRequest)
+			fmt.Println("Bad request: invalid character in card number")
 
 			response := models.CardValidationResponse{
 				IsValid: false,
@@ -69,11 +69,12 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 
 		response := models.CardValidationResponse{
 			IsValid: isValid,
+			Message: "Success",
 		}
 
 		json.NewEncoder(w).Encode(response)
 	default:
-		fmt.Printf("Bad request: method not allowed, returning %d...\n", http.StatusMethodNotAllowed)
+		fmt.Println("Bad request: method not allowed")
 
 		response := models.CardValidationResponse{
 			IsValid: false,
