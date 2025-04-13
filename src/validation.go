@@ -2,7 +2,7 @@ package src
 
 // The following function takes a card number, including the check digit, as an array
 // of integers and outputs true if the check digit is correct, false otherwise.
-func IsValid(cardNumbers []int) bool {
+func ValidateCard(cardNumbers []int) bool {
 	n := len(cardNumbers)
 	sum := 0
 	parity := n % 2
