@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cc-luhn-validator/internal/cache"
 	"cc-luhn-validator/internal/handlers"
 	"cc-luhn-validator/internal/utils"
 	"errors"
@@ -12,11 +13,12 @@ import (
 func main() {
 	// Dummy credit card numbers can be found in stripe testing doc: https://docs.stripe.com/testing
 
-	fmt.Println("Starting server...")
+	fmt.Println("Setting up server cache...")
+	memoryCache := cache.NewLRUMemCache(5)
 
 	fmt.Println("Registering server paths to server mux...")
 	cardValidator := utils.NewCardValidator()
-	handler := handlers.NewHandler(cardValidator)
+	handler := handlers.NewHandler(cardValidator, memoryCache)
 	http.HandleFunc("/validate", handler.GetValidation)
 
 	// Specify IP address before colon to tell server to listen on specific IP addresses.

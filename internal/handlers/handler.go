@@ -1,20 +1,24 @@
 package handlers
 
 import (
+	"cc-luhn-validator/internal/cache"
 	"cc-luhn-validator/internal/models"
 	"cc-luhn-validator/internal/utils"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type Handler struct {
 	validator utils.Validator
+	cache     cache.Cache
 }
 
-func NewHandler(v utils.Validator) *Handler {
+func NewHandler(v utils.Validator, c cache.Cache) *Handler {
 	return &Handler{
 		validator: v,
+		cache:     c,
 	}
 }
 
@@ -36,6 +40,17 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+
+		// Check cache
+		if data, exists := h.cache.Get(req.CardNumber); exists {
+			response := models.CardValidationResponse{
+				IsValid:     data.IsValid,
+				CardNetwork: data.CardNetwork,
+			}
+
 			json.NewEncoder(w).Encode(response)
 			return
 		}
@@ -71,10 +86,13 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Put in cache
+		// TODO: put TTL in config struct
+		h.cache.Put(req.CardNumber, isValid, cardNetwork, 5*time.Minute)
+
 		response := models.CardValidationResponse{
 			IsValid:     isValid,
 			CardNetwork: cardNetwork,
-			Message:     "Success",
 		}
 
 		json.NewEncoder(w).Encode(response)
