@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"cc-luhn-validator/internal/cache"
+	"cc-luhn-validator/internal/constants"
 	"cc-luhn-validator/internal/models"
 	"cc-luhn-validator/internal/utils"
 	"encoding/json"
@@ -9,27 +10,6 @@ import (
 	"net/http"
 	"time"
 )
-
-type DataSource int
-
-const (
-	Handler DataSource = iota
-	Cache
-	Server
-)
-
-func (d DataSource) String() string {
-	switch d {
-	case Handler:
-		return "handler"
-	case Cache:
-		return "cache"
-	case Server:
-		return "server"
-	default:
-		return "unkown"
-	}
-}
 
 type ValidationHandler struct {
 	validator utils.Validator
@@ -56,9 +36,9 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 
 			response := models.CardValidationResponse{
 				IsValid:     false,
-				CardNetwork: utils.Unknown.String(),
+				CardNetwork: constants.Unknown.String(),
 				Message:     "Invalid JSON format",
-				Source:      Handler.String(),
+				Source:      constants.Handler.String(),
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
@@ -71,7 +51,7 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 			response := models.CardValidationResponse{
 				IsValid:     data.IsValid,
 				CardNetwork: data.CardNetwork,
-				Source:      Cache.String(),
+				Source:      constants.Cache.String(),
 			}
 
 			json.NewEncoder(w).Encode(response)
@@ -83,9 +63,9 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 
 			response := models.CardValidationResponse{
 				IsValid:     false,
-				CardNetwork: utils.Unknown.String(),
+				CardNetwork: constants.Unknown.String(),
 				Message:     "Missing card number",
-				Source:      Handler.String(),
+				Source:      constants.Handler.String(),
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
@@ -101,9 +81,9 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 
 			response := models.CardValidationResponse{
 				IsValid:     false,
-				CardNetwork: utils.Unknown.String(),
+				CardNetwork: constants.Unknown.String(),
 				Message:     "Invalid character detected in card number",
-				Source:      Handler.String(),
+				Source:      constants.Handler.String(),
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
@@ -118,7 +98,7 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 		response := models.CardValidationResponse{
 			IsValid:     isValid,
 			CardNetwork: cardNetwork,
-			Source:      Server.String(),
+			Source:      constants.Server.String(),
 		}
 
 		json.NewEncoder(w).Encode(response)
@@ -127,9 +107,9 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 
 		response := models.CardValidationResponse{
 			IsValid:     false,
-			CardNetwork: utils.Unknown.String(),
+			CardNetwork: constants.Unknown.String(),
 			Message:     "Method not allowed",
-			Source:      Handler.String(),
+			Source:      constants.Handler.String(),
 		}
 
 		json.NewEncoder(w).Encode(response)
