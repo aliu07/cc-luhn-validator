@@ -10,19 +10,40 @@ import (
 	"time"
 )
 
-type Handler struct {
+type DataSource int
+
+const (
+	Handler DataSource = iota
+	Cache
+	Server
+)
+
+func (d DataSource) String() string {
+	switch d {
+	case Handler:
+		return "handler"
+	case Cache:
+		return "cache"
+	case Server:
+		return "server"
+	default:
+		return "unkown"
+	}
+}
+
+type ValidationHandler struct {
 	validator utils.Validator
 	cache     cache.Cache
 }
 
-func NewHandler(v utils.Validator, c cache.Cache) *Handler {
-	return &Handler{
+func NewHandler(v utils.Validator, c cache.Cache) *ValidationHandler {
+	return &ValidationHandler{
 		validator: v,
 		cache:     c,
 	}
 }
 
-func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
+func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		// Set response type to JSON format
@@ -37,6 +58,7 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 				IsValid:     false,
 				CardNetwork: utils.Unknown.String(),
 				Message:     "Invalid JSON format",
+				Source:      Handler.String(),
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
@@ -49,6 +71,7 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 			response := models.CardValidationResponse{
 				IsValid:     data.IsValid,
 				CardNetwork: data.CardNetwork,
+				Source:      Cache.String(),
 			}
 
 			json.NewEncoder(w).Encode(response)
@@ -62,6 +85,7 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 				IsValid:     false,
 				CardNetwork: utils.Unknown.String(),
 				Message:     "Missing card number",
+				Source:      Handler.String(),
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
@@ -79,6 +103,7 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 				IsValid:     false,
 				CardNetwork: utils.Unknown.String(),
 				Message:     "Invalid character detected in card number",
+				Source:      Handler.String(),
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
@@ -93,6 +118,7 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 		response := models.CardValidationResponse{
 			IsValid:     isValid,
 			CardNetwork: cardNetwork,
+			Source:      Server.String(),
 		}
 
 		json.NewEncoder(w).Encode(response)
@@ -103,6 +129,7 @@ func (h *Handler) GetValidation(w http.ResponseWriter, r *http.Request) {
 			IsValid:     false,
 			CardNetwork: utils.Unknown.String(),
 			Message:     "Method not allowed",
+			Source:      Handler.String(),
 		}
 
 		json.NewEncoder(w).Encode(response)
