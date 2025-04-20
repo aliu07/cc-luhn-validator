@@ -3,6 +3,7 @@ package server
 import (
 	"cc-luhn-validator/internal/handlers"
 	"cc-luhn-validator/internal/middleware"
+	"log"
 	"net/http"
 )
 
@@ -11,14 +12,20 @@ type CardValidationServer interface {
 }
 
 type cardValidationServer struct {
-	ID      string
-	Handler *handlers.ValidationHandler
+	ID           string
+	Handler      *handlers.ValidationHandler
+	ServerLogger *log.Logger
+	CacheLogger  *log.Logger
+	ErrorLogger  *log.Logger
 }
 
-func NewValidationServer(id string, h *handlers.ValidationHandler) CardValidationServer {
+func NewValidationServer(id string, h *handlers.ValidationHandler, serverLogger *log.Logger, cacheLogger *log.Logger, errorLogger *log.Logger) CardValidationServer {
 	return &cardValidationServer{
-		ID:      id,
-		Handler: h,
+		ID:           id,
+		Handler:      h,
+		ServerLogger: serverLogger,
+		CacheLogger:  cacheLogger,
+		ErrorLogger:  errorLogger,
 	}
 }
 

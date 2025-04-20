@@ -1,40 +1,40 @@
 package main
 
 import (
-	"cc-luhn-validator/internal/cache"
-	"cc-luhn-validator/internal/handlers"
-	"cc-luhn-validator/internal/server"
-	"cc-luhn-validator/internal/service"
-	"cc-luhn-validator/internal/utils"
+	"cc-luhn-validator/internal/factory"
 	"errors"
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
 )
 
 func main() {
-	fmt.Println("Setting up server components...")
-	cardValidator := utils.NewCardValidator()
-	memoryCache := cache.NewLRUMemCache(5)
-	cacheTTL := 5 * time.Minute
-	service := service.NewCardValidationService(cardValidator, memoryCache, cacheTTL)
-	handler := handlers.NewHandler(service)
+	serverLogger := log.New(os.Stdout, "[SERVER] ", log.LstdFlags)
+	cacheLogger := log.New(os.Stdout, "[CACHE] ", log.LstdFlags)
+	errorLogger := log.New(os.Stdout, "[ERROR] ", log.LstdFlags)
 
-	fmt.Println("Setting up server...")
-	server := server.NewValidationServer("server1", handler)
+	serverLogger.Println("Setting up server instance...")
+	config := factory.ServerConfig{
+		ID:           "server1",
+		CacheSize:    5,
+		CacheTTL:     1 * time.Minute,
+		ServerLogger: serverLogger,
+		CacheLogger:  cacheLogger,
+		ErrorLogger:  errorLogger,
+	}
+	server := factory.CreateServer(config)
 
-	fmt.Println("Registering server paths to server mux...")
+	serverLogger.Println("Registering server paths to server mux...")
 	server.SetupRoutes()
 
 	// Specify IP address before colon to tell server to listen on specific IP addresses.
-	fmt.Println("Listening and ready to serve...")
+	serverLogger.Println("Listennig and ready to server...")
 	err := http.ListenAndServe(":8080", nil)
 
 	if errors.Is(err, http.ErrServerClosed) {
-		fmt.Println("Server shutting down...")
+		serverLogger.Println("Server shutting down...")
 	} else if err != nil {
-		fmt.Printf("Error starting server: %s\n", err)
-		os.Exit(1)
+		serverLogger.Fatalf("Error starting server: %s\n", err.Error())
 	}
 }

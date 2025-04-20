@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"fmt"
+	"log"
 	"sync"
 	"time"
 )
@@ -16,16 +16,16 @@ type LRUNode struct {
 }
 
 type LRUMemCache struct {
-	mu       sync.RWMutex
-	items    map[string]LRUNode
-	capacity int
-
+	mu          sync.RWMutex
+	cacheLogger *log.Logger
+	items       map[string]LRUNode
+	capacity    int
 	// LRU queue management
 	head *LRUNode
 	tail *LRUNode
 }
 
-func NewLRUMemCache(size int) *LRUMemCache {
+func NewLRUMemCache(size int, cacheLogger *log.Logger) *LRUMemCache {
 	// LRU management
 	head := &LRUNode{}
 	tail := &LRUNode{}
@@ -34,10 +34,11 @@ func NewLRUMemCache(size int) *LRUMemCache {
 	tail.prev = head
 
 	cache := &LRUMemCache{
-		items:    make(map[string]LRUNode),
-		capacity: size,
-		head:     head,
-		tail:     tail,
+		cacheLogger: cacheLogger,
+		items:       make(map[string]LRUNode),
+		capacity:    size,
+		head:        head,
+		tail:        tail,
 	}
 
 	// To clean up expired cache lines
@@ -46,17 +47,17 @@ func NewLRUMemCache(size int) *LRUMemCache {
 	return cache
 }
 
-func (c *LRUMemCache) Get(key string) (DataItem, bool) {
-	if _, exists := c.items[key]; !exists {
-		fmt.Printf("[CACHE] Cache miss for key %s...\n", key)
+func (cache *LRUMemCache) Get(key string) (DataItem, bool) {
+	if _, exists := cache.items[key]; !exists {
+		cache.cacheLogger.Printf("Cache miss for key %s...\n", key)
 		return DataItem{}, false
 	}
 
-	node := c.items[key]
-	c.pop(&node)
-	c.insert(&node)
+	node := cache.items[key]
+	cache.pop(&node)
+	cache.insert(&node)
 
-	fmt.Printf("[CACHE] Cache hit for key %s...\n", key)
+	cache.cacheLogger.Printf("Cache hit for key %s...\n", key)
 
 	return DataItem{
 		IsValid:     node.isValid,
@@ -64,18 +65,18 @@ func (c *LRUMemCache) Get(key string) (DataItem, bool) {
 	}, true
 }
 
-func (c *LRUMemCache) Put(key string, isValid bool, cardNetwork string, ttl time.Duration) {
+func (cache *LRUMemCache) Put(key string, isValid bool, cardNetwork string, ttl time.Duration) {
 	// If full
-	if len(c.items) == c.capacity {
-		toRemove := c.tail.prev
+	if len(cache.items) == cache.capacity {
+		toRemove := cache.tail.prev
 
-		fmt.Printf("[CACHE] Evicting key %s...\n", toRemove.key)
+		cache.cacheLogger.Printf("Evicting key %s...\n", toRemove.key)
 
-		c.pop(toRemove)
-		delete(c.items, toRemove.key)
+		cache.pop(toRemove)
+		delete(cache.items, toRemove.key)
 	}
 
-	fmt.Printf("[CACHE] Inserting key %s...\n", key)
+	cache.cacheLogger.Printf("Inserting key %s...\n", key)
 
 	newNode := LRUNode{
 		key:         key,
@@ -83,31 +84,32 @@ func (c *LRUMemCache) Put(key string, isValid bool, cardNetwork string, ttl time
 		cardNetwork: cardNetwork,
 		expiration:  time.Now().Add(ttl),
 	}
-	c.insert(&newNode)
-	c.items[key] = newNode
+
+	cache.insert(&newNode)
+	cache.items[key] = newNode
 }
 
-func (c *LRUMemCache) cleanup() {
+func (cache *LRUMemCache) cleanup() {
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		c.mu.RLock()
+		cache.mu.RLock()
 		now := time.Now()
 
-		for k, v := range c.items {
-			if v.expiration.Before(now) {
-				delete(c.items, k)
+		for key, val := range cache.items {
+			if val.expiration.Before(now) {
+				delete(cache.items, key)
 			}
 		}
 
-		c.mu.RUnlock()
+		cache.mu.RUnlock()
 	}
 }
 
 // Insert at head of LRU DLL
-func (c *LRUMemCache) insert(node *LRUNode) {
-	l, r := c.head, c.head.next
+func (cache *LRUMemCache) insert(node *LRUNode) {
+	l, r := cache.head, cache.head.next
 	l.next = node
 	node.next = r
 	r.prev = node
@@ -115,7 +117,7 @@ func (c *LRUMemCache) insert(node *LRUNode) {
 }
 
 // Pop from tail of LRU DLL
-func (c *LRUMemCache) pop(node *LRUNode) {
+func (cache *LRUMemCache) pop(node *LRUNode) {
 	l, r := node.prev, node.next
 	l.next = r
 	r.prev = l

@@ -48,7 +48,7 @@ func (v *CardValidator) ValidateString(cardNumber string) (bool, error) {
 		digit, err := strconv.Atoi(string(char))
 
 		if err != nil {
-			return false, fmt.Errorf("Invalid digit in card number: %v", err)
+			return false, fmt.Errorf("Invalid digit in card number: %s", cardNumber)
 		}
 
 		cardNumbers = append(cardNumbers, digit)
