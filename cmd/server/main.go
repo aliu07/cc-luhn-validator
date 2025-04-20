@@ -3,6 +3,7 @@ package main
 import (
 	"cc-luhn-validator/internal/cache"
 	"cc-luhn-validator/internal/handlers"
+	"cc-luhn-validator/internal/middleware"
 	"cc-luhn-validator/internal/utils"
 	"errors"
 	"fmt"
@@ -19,7 +20,9 @@ func main() {
 	fmt.Println("Registering server paths to server mux...")
 	cardValidator := utils.NewCardValidator()
 	handler := handlers.NewHandler(cardValidator, memoryCache)
-	http.HandleFunc("/validate", handler.GetValidation)
+
+	// Wrap handler with middleware
+	http.HandleFunc("/validate", middleware.ValidateJSONHeaderRequest(handler.GetValidation))
 
 	// Specify IP address before colon to tell server to listen on specific IP addresses.
 	fmt.Println("Listening and ready to serve...")

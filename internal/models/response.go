@@ -6,3 +6,7 @@ type CardValidationResponse struct {
 	Message     string `json:"message,omitempty"`
 	Source      string `json:"source"`
 }
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+}

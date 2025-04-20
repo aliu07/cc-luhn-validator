@@ -34,11 +34,8 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			fmt.Println("Bad request: invalid JSON format")
 
-			response := models.CardValidationResponse{
-				IsValid:     false,
-				CardNetwork: constants.Unknown.String(),
-				Message:     "Invalid JSON format",
-				Source:      constants.Handler.String(),
+			response := models.ErrorResponse{
+				Message: "Invalid JSON format",
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
@@ -61,11 +58,8 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 		if req.CardNumber == "" {
 			fmt.Println("Bad request: missing card number")
 
-			response := models.CardValidationResponse{
-				IsValid:     false,
-				CardNetwork: constants.Unknown.String(),
-				Message:     "Missing card number",
-				Source:      constants.Handler.String(),
+			response := models.ErrorResponse{
+				Message: "Missing card number",
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
@@ -79,11 +73,8 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 		if err != nil {
 			fmt.Println("Bad request: invalid character in card number")
 
-			response := models.CardValidationResponse{
-				IsValid:     false,
-				CardNetwork: constants.Unknown.String(),
-				Message:     "Invalid character detected in card number",
-				Source:      constants.Handler.String(),
+			response := models.ErrorResponse{
+				Message: "Invalid character detected in card number",
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
@@ -105,11 +96,8 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 	default:
 		fmt.Println("Bad request: method not allowed")
 
-		response := models.CardValidationResponse{
-			IsValid:     false,
-			CardNetwork: constants.Unknown.String(),
-			Message:     "Method not allowed",
-			Source:      constants.Handler.String(),
+		response := models.ErrorResponse{
+			Message: "Method not allowed",
 		}
 
 		json.NewEncoder(w).Encode(response)
