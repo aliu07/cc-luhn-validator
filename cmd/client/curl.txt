@@ -1,0 +1,6 @@
+I'm storing a curl request here as a temporary measure...
+
+curl -X POST \
+  http://localhost:8080/validate \
+  -H "Content-Type: application/json" \
+  -d '{"CardNumber": "4242424242424242"}'
