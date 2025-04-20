@@ -1,25 +1,20 @@
 package handlers
 
 import (
-	"cc-luhn-validator/internal/cache"
-	"cc-luhn-validator/internal/constants"
 	"cc-luhn-validator/internal/models"
-	"cc-luhn-validator/internal/utils"
+	"cc-luhn-validator/internal/service"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 )
 
 type ValidationHandler struct {
-	validator utils.Validator
-	cache     cache.Cache
+	validationService service.CardValidationService
 }
 
-func NewHandler(v utils.Validator, c cache.Cache) *ValidationHandler {
+func NewHandler(validationService service.CardValidationService) *ValidationHandler {
 	return &ValidationHandler{
-		validator: v,
-		cache:     c,
+		validationService: validationService,
 	}
 }
 
@@ -43,38 +38,13 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		// Check cache
-		if data, exists := h.cache.Get(req.CardNumber); exists {
-			response := models.CardValidationResponse{
-				IsValid:     data.IsValid,
-				CardNetwork: data.CardNetwork,
-				Source:      constants.Cache.String(),
-			}
-
-			json.NewEncoder(w).Encode(response)
-			return
-		}
-
-		if req.CardNumber == "" {
-			fmt.Println("Bad request: missing card number")
-
-			response := models.ErrorResponse{
-				Message: "Missing card number",
-			}
-
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(response)
-			return
-		}
-
-		isValid, err := h.validator.ValidateString(req.CardNumber)
-		cardNetwork := utils.GetCardNetwork(req.CardNumber)
+		result, err := h.validationService.ValidateCard(req.CardNumber)
 
 		if err != nil {
-			fmt.Println("Bad request: invalid character in card number")
+			fmt.Printf("Bad request: %s\n", err.Error())
 
 			response := models.ErrorResponse{
-				Message: "Invalid character detected in card number",
+				Message: err.Error(),
 			}
 
 			w.WriteHeader(http.StatusBadRequest)
@@ -82,14 +52,10 @@ func (h *ValidationHandler) GetValidation(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		// Put in cache
-		// TODO: put TTL in config struct
-		h.cache.Put(req.CardNumber, isValid, cardNetwork, 5*time.Minute)
-
 		response := models.CardValidationResponse{
-			IsValid:     isValid,
-			CardNetwork: cardNetwork,
-			Source:      constants.Server.String(),
+			IsValid:     result.IsValid,
+			CardNetwork: result.CardNetwork,
+			Source:      result.Source,
 		}
 
 		json.NewEncoder(w).Encode(response)

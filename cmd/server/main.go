@@ -3,26 +3,29 @@ package main
 import (
 	"cc-luhn-validator/internal/cache"
 	"cc-luhn-validator/internal/handlers"
-	"cc-luhn-validator/internal/middleware"
+	"cc-luhn-validator/internal/server"
+	"cc-luhn-validator/internal/service"
 	"cc-luhn-validator/internal/utils"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
-	// Dummy credit card numbers can be found in stripe testing doc: https://docs.stripe.com/testing
-
-	fmt.Println("Setting up server cache...")
+	fmt.Println("Setting up server components...")
+	cardValidator := utils.NewCardValidator()
 	memoryCache := cache.NewLRUMemCache(5)
+	cacheTTL := 5 * time.Minute
+	service := service.NewCardValidationService(cardValidator, memoryCache, cacheTTL)
+	handler := handlers.NewHandler(service)
+
+	fmt.Println("Setting up server...")
+	server := server.NewValidationServer("server1", handler)
 
 	fmt.Println("Registering server paths to server mux...")
-	cardValidator := utils.NewCardValidator()
-	handler := handlers.NewHandler(cardValidator, memoryCache)
-
-	// Wrap handler with middleware
-	http.HandleFunc("/validate", middleware.ValidateJSONHeaderRequest(handler.GetValidation))
+	server.SetupRoutes()
 
 	// Specify IP address before colon to tell server to listen on specific IP addresses.
 	fmt.Println("Listening and ready to serve...")
